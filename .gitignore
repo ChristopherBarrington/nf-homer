@@ -1,0 +1,9 @@
+# exclude any (hidden) nextflow directories
+# should not be running pipelines from this directory though!!
+
+.nextflow*
+work
+output
+
+# ignore the FastQ files
+*fastq.gz

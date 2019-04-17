@@ -1,0 +1,66 @@
+#
+# A template project description for the nf-juicer pipeline
+#
+
+#
+# A description of the project
+#
+
+project:
+  name: A nice project name
+  comment: A short description of the project.
+
+#
+# Describe the sequenced libraries in the project
+# - <libraries> can be composed of multiple <runs> that are analysed together
+# - <data_root> could be used to avoid the same prefix on all the file names?
+# - <split_input_files> is the number of reads (not lines) into which input files should be split and distributed
+#
+
+raw_data:
+  split_input_files: False
+  libraries:
+    library_1:
+      lane_1:
+        - possibly/absolute/path/to/pair_1.fastq.gz
+        - possibly/absolute/path/to/pair_2.fastq.gz
+      lane_2:
+        - possibly/absolute/path/to/pair_1.fastq.gz
+        - possibly/absolute/path/to/pair_2.fastq.gz
+    library_2:
+      lane_1:
+        - possibly/absolute/path/to/pair_1.fastq.gz
+        - possibly/absolute/path/to/pair_2.fastq.gz
+    library_3:
+      lane_1:
+        - possibly/absolute/path/to/pair_1.fastq.gz
+        - possibly/absolute/path/to/pair_2.fastq.gz
+      lane_2:
+        - possibly/absolute/path/to/pair_1.fastq.gz
+        - possibly/absolute/path/to/pair_2.fastq.gz
+      lane_3:
+        - possibly/absolute/path/to/pair_1.fastq.gz
+        - possibly/absolute/path/to/pair_2.fastq.gz
+
+#
+# Define the genome for the project
+# - uses the iGenomes directory structure
+# - `igenomes_base` is provided by the nf-core configurations so will be removed from here later...
+#
+
+genome:
+  species: Homo_sapiens
+  source: Ensembl
+  build: GRCm38
+igenomes_base: /camp/svc/reference/Genomics/iGenomes
+
+#
+# Options for `juicer_tools` making .hic files
+#
+
+hic_file_options:
+  resolutions:
+    - 100000
+    - 10000
+    - 1000
+  normalise: True

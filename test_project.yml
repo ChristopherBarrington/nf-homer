@@ -1,0 +1,90 @@
+#
+# A template project description for the nf-juicer pipeline
+#
+
+#
+# A description of the project
+#
+
+project:
+  name: A nice project name
+  comment: A short description of the project.
+
+#
+# Describe the sequenced libraries in the project
+# - <libraries> can be composed of multiple <runs> that are analysed together
+# - <data_root> could be used to avoid the same prefix on all the file names?
+# - <split_input_files> is the number of reads (not lines) into which input files should be split and distributed
+#
+
+raw_data:
+  split_input_files: 5000000
+  samples:
+    BY4742_G1:
+      library_1:
+        lane_1:
+          - data/BY4742_G1_RepA_S10_L004_R1_001.fastq.gz
+          - data/BY4742_G1_RepA_S10_L004_R2_001.fastq.gz
+        lane_2:
+          - data/BY4742_G1_RepA_S26_L003_R1_001.fastq.gz
+          - data/BY4742_G1_RepA_S26_L003_R2_001.fastq.gz
+      library_2:
+        lane_1:
+          - data/BY4742_G1_RepB_S20_L005_R1_001.fastq.gz
+          - data/BY4742_G1_RepB_S20_L005_R2_001.fastq.gz
+        lane_2:
+          - data/BY4742_G1_RepB_S32_L004_R1_001.fastq.gz
+          - data/BY4742_G1_RepB_S32_L004_R2_001.fastq.gz
+      library_3:
+        lane_1:
+          - data/BY4742_G1_RepC_S18_L005_R1_001.fastq.gz
+          - data/BY4742_G1_RepC_S18_L005_R2_001.fastq.gz
+        lane_2:
+          - data/BY4742_G1_RepC_S31_L004_R1_001.fastq.gz
+          - data/BY4742_G1_RepC_S31_L004_R2_001.fastq.gz
+    BY4742_M:
+      library_1:
+        lane_1:
+          - data/BY4742_M_RepA_S15_L005_R1_001.fastq.gz
+          - data/BY4742_M_RepA_S15_L005_R2_001.fastq.gz
+        lane_2:
+          - data/BY4742_M_RepA_S35_L004_R1_001.fastq.gz
+          - data/BY4742_M_RepA_S35_L004_R2_001.fastq.gz
+      library_2:
+        lane_1:
+          - data/BY4742_M_RepB_S16_L005_R1_001.fastq.gz
+          - data/BY4742_M_RepB_S16_L005_R2_001.fastq.gz
+        lane_2:
+          - data/BY4742_M_RepB_S38_L004_R1_001.fastq.gz
+          - data/BY4742_M_RepB_S38_L004_R2_001.fastq.gz
+      library_3:
+        lane_1:
+          - data/BY4742_M_RepC_S19_L005_R1_001.fastq.gz
+          - data/BY4742_M_RepC_S19_L005_R2_001.fastq.gz
+        lane_2:
+          - data/BY4742_M_RepC_S33_L004_R1_001.fastq.gz
+          - data/BY4742_M_RepC_S33_L004_R2_001.fastq.gz
+
+#
+# Define the genome for the project
+# - uses the iGenomes directory structure
+# - `igenomes_base` is provided by the nf-core configurations so will be removed from here later...
+#
+
+genome:
+  species: Homo_sapiens
+  source: Ensembl
+  build: GRCm38
+igenomes_base: /camp/svc/reference/Genomics/iGenomes
+
+#
+# Options for `juicer_tools` making .hic files
+#
+
+hic_file_options:
+  resolutions:
+    - 100000
+    - 10000
+    - 1000
+  normalise: True
+
