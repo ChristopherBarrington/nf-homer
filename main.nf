@@ -38,12 +38,8 @@ Channel
 // if the --split parameter is used, split the FastQ files into bitesize chunks before continuing
 process split_input_files_into_chunks {
 
+	label 'standard'
 	tag {[sample, library, lane, read_pair].join('-')}
-
-	cpus 1
-	time '00:30:00'
-	memory '6G'
-	executor 'slurm'
 
 	input:
 		set val(sample), val(library), val(lane), val(read_pair), file(fastq) from INPUT__fastq_files_to_subset
@@ -74,6 +70,7 @@ OUTPUT__split_input_files_into_chunks
 // read each input FastQ file and remove the restriction site (if present)
 process trim_restriction_sites_from_fastq {
 
+	label 'standard'
 	tag {[sample, library, lane, read_pair, chunk].join('-')}
 
 	module 'Homer/4.10-Perl-5.26.1-foss-2018a'
@@ -105,14 +102,9 @@ OUTPUT__trim_restriction_sites_from_fastq__TRIMMED_FASTQ
 
 process align_trimmed_fastq {
 
+	label 'standard'
 	tag {[sample, library, lane, read_pair].join('-')}
 	publishDir mode: 'copy', overwrite: true, path: "output/bowtie2/logs", pattern: '*log'
-
-	module 'Bowtie2/2.3.4.1-foss-2018a'
-	cpus 1
-	time '00:30:00'
-	memory '1G'
-	executor 'slurm'
 
 	input:
 		set val(sample), val(library), val(lane), val(read_pair), val(chunk), file(fastq) from INPUT__align_trimmed_fastq
@@ -199,15 +191,11 @@ INPUT__make_tag_directory
 
 process make_tag_directory_for_lanes {
 
+	label 'long_time'
+	label 'high_memory'
+	label 'need_homer'
 	tag {[sample, library, lane].join('-')}
 	publishDir mode: 'copy', overwrite: true, path: 'output/tags', pattern: "$output_dir/*tsv"
-
-	module 'Homer/4.10-Perl-5.26.1-foss-2018a'
-	cache true
-	cpus 1
-	time '00:30:00'
-	memory '6G'
-	executor 'slurm'
 	
 	input:
 		set val(sample), val(library), val(lane), val(read_pairs), val(chunks), file(sams) from INPUT__make_tag_directory_for_lanes__LANE_GROUPS
@@ -236,18 +224,12 @@ OUTPUT__make_tag_directory_for_lanes
 // PCR duplicates removed using the `-tbl 1` argument
 process merge_lane_tags_into_libraries {
 
+	label 'long_time'
+	label 'high_memory'
+	label 'need_homer'
 	tag {[sample, library].join('-')}
 	publishDir mode: 'copy', overwrite: true, path: 'output/tags', pattern: '**tsv'
 	publishDir mode: 'copy', overwrite: true, path: 'output/stats', pattern: '**txt'
-
-	module 'Homer/4.10-Perl-5.26.1-foss-2018a'
-	cpus 1
-	time '00:30:00'
-	memory '6G'
-	executor 'slurm'
-
-	when:
-		true
 
 	input:
 		set val(sample), val(library), val(lanes), file(lane_tag_dirs) from INPUT__merge_lane_tags_into_libraries
@@ -284,18 +266,12 @@ OUTPUT__merge_lane_tags_into_libraries
 // PCR duplicates are not removed here, since these are biological replicates
 process merge_library_tags_into_samples {
 
+	label 'long_time'
+	label 'high_memory'
+	label 'need_homer'
 	tag {sample}
 	publishDir mode: 'copy', overwrite: true, path: 'output/tags', pattern: '**tsv'
 	publishDir mode: 'copy', overwrite: true, path: 'output/stats', pattern: '**txt'
-
-	module 'Homer/4.10-Perl-5.26.1-foss-2018a'
-	cpus 1
-	time '00:30:00'
-	memory '6G'
-	executor 'slurm'
-
-	when:
-		true
 
 	input:
 		set val(sample), val(libraries), file(library_tag_dirs) from INPUT__merge_library_tags_into_samples
@@ -339,18 +315,11 @@ OUTPUT__make_tag_directory_for_lanes__CONVERT_FORMAT
 
 process make_juicebox_file_from_maps {
 
+	label 'long_time'
+	label 'high_memory'
+	label 'need_homer'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: 'output/Juicebox'
-
-	module 'Homer/4.10-Perl-5.26.1-foss-2018a'
-	cache true
-	cpus 1
-	time '00:30:00'
-	memory '1G'
-	executor 'local'
-
-	when:
-		false
 
 	input:
 		set val(dataset_name), file(tag_directory_path) from INPUT__make_juicebox_file_from_maps
@@ -386,19 +355,10 @@ OUTPUT__make_tag_directory_for_lanes__QC
 
 process plot_tag_qc_petagLocalDistribution {
 
+	label 'standard'
+	label 'need_r'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: 'output/qc/petagLocalDistribution'
-
-	module 'UDUNITS/2.2.26-foss-2016b'
-	module 'R/3.5.1-foss-2016b-BABS'
-	cpus 1
-	time '00:30:00'
-	memory '6G'
-	executor 'slurm'
-	cache true
-
-	when:
-		true
 
 	input:
 		set val(dataset_name), file(tag_directory_path) from INPUT__plot_tag_qc_petagLocalDistribution
@@ -413,19 +373,10 @@ process plot_tag_qc_petagLocalDistribution {
 
 process plot_tag_qc_petagFreqDistribution {
 
-	module 'UDUNITS/2.2.26-foss-2016b'
-	module 'R/3.5.1-foss-2016b-BABS'
-	cpus 1
-	time '00:30:00'
-	memory '6G'
-	executor 'slurm'
-	cache true
-
+	label 'standard'
+	label 'need_r'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: 'output/qc/petagFreqDistribution'
-
-	when:
-		true
 
 	input:
 		set val(dataset_name), file(tag_directory_path) from INPUT__plot_tag_qc_petagFreqDistribution
@@ -440,19 +391,10 @@ process plot_tag_qc_petagFreqDistribution {
 
 process plot_tag_qc_petagRestrictionDistribution {
 
-	module 'UDUNITS/2.2.26-foss-2016b'
-	module 'R/3.5.1-foss-2016b-BABS'
-	cpus 1
-	time '00:30:00'
-	memory '6G'
-	executor 'slurm'
-	cache true
-
+	label 'standard'
+	label 'need_r'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: 'output/qc/petagRestrictionDistribution'
-
-	when:
-		true
 
 	input:
 		set val(dataset_name), file(tag_directory_path) from INPUT__plot_tag_qc_petagRestrictionDistribution
@@ -486,21 +428,13 @@ OUTPUT__merge_lane_tags_into_libraries__ANALYZE_HIC
 // make an interaction matrix from the tag directory
 process analyze_hic_create_matrix {
 
+	label 'standard'
+	label 'need_homer'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: "output/interaction_matrices/$normalisation_method/$resolution"
 
-	module 'Homer/4.10-Perl-5.26.1-foss-2018a'
-	cpus 1
-	time '00:30:00'
-	memory '6G'
-	executor 'slurm'
-	cache true
-
 	resolutions = [2000, 10000, 50000, 100000] // get from params
 	normalisation_methods = ['coverageNorm','distNorm']
-
-	when:
-		true
 
 	input:
 		set val(dataset_name), file(tag_directory_path) from INPUT__analyze_hic_create_matrix
@@ -521,22 +455,14 @@ process analyze_hic_create_matrix {
 // calculate distal-to-local (DLR) and interchromosomal fraction (ICF)
 process analyze_hic_chromatin_compaction {
 
+	label 'standard'
+	label 'need_homer'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: "output/chromatin_compaction/$normalisation_method/res_$resolution/win_$window", pattern: '*bedGraph'
 	publishDir mode: 'copy', overwrite: true, path: "output/chromatin_compaction/$normalisation_method/res_$resolution/win_$window/logs", pattern: '*log'
 
-	module 'Homer/4.10-Perl-5.26.1-foss-2018a'
-	cpus 1
-	time '00:30:00'
-	memory '6G'
-	executor 'slurm'
-	cache true
-
 	resolutions = [5000, 10000] // get from params
 	normalisation_methods = ['coverageNorm']
-
-	when:
-		!params.containsKey('chromatin_compaction')
 
 	input:
 		set val(dataset_name), file(tag_directory_path) from INPUT__analyze_hic_chromatin_compaction
@@ -566,21 +492,13 @@ process analyze_hic_chromatin_compaction {
 
 process analyze_hic_find_tads_and_loops {
 
+	label 'standard'
+	label 'need_homer'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: "output/loops_and_tads/res_$resolution/win_$window", pattern: '*{bedGraph,txt,bed}'
 	publishDir mode: 'copy', overwrite: true, path: "output/loops_and_tads/res_$resolution/win_$window/logs", pattern: '*log'
 
-	module 'Homer/4.10-Perl-5.26.1-foss-2018a'
-	cpus 1
-	time '00:30:00'
-	memory '6G'
-	executor 'slurm'
-	cache true
-
 	resolutions = [5000, 10000] // get from params
-
-	when:
-		!params.containsKey('chromatin_compaction')
 
 	input:
 		set val(dataset_name), file(tag_directory_path) from INPUT__analyze_hic_find_tads_and_loops
