@@ -9,9 +9,14 @@
 // bowtie2
 
 // paths that will be dynamic
-BOWTIE2_INDEX='/camp/svc/reference/Genomics/iGenomes/Saccharomyces_cerevisiae/UCSC/sacCer3/Sequence/Bowtie2Index/genome'
-GENOME_FASTA='/camp/svc/reference/Genomics/iGenomes/Saccharomyces_cerevisiae/UCSC/sacCer3/Sequence/WholeGenomeFasta/genome.fa'
-GENOME_FAI='/camp/svc/reference/Genomics/iGenomes/Saccharomyces_cerevisiae/UCSC/sacCer3/Sequence/WholeGenomeFasta/genome.fa.fai'
+GENOME_REPOSITORY=params.igenomes_base+'/'+params.genome.species+'/'+params.genome.source+'/'+params.genome.build+'/Sequence'
+BOWTIE2_INDEX=GENOME_REPOSITORY+'/Bowtie2Index/genome'
+GENOME_FASTA=GENOME_REPOSITORY+'/WholeGenomeFasta/genome.fa'
+GENOME_FAI=GENOME_REPOSITORY+'/WholeGenomeFasta/genome.fa.fai'
+
+// BOWTIE2_INDEX='/camp/svc/reference/Genomics/iGenomes/Saccharomyces_cerevisiae/UCSC/sacCer3/Sequence/Bowtie2Index/genome'
+// GENOME_FASTA='/camp/svc/reference/Genomics/iGenomes/Saccharomyces_cerevisiae/UCSC/sacCer3/Sequence/WholeGenomeFasta/genome.fa'
+// GENOME_FAI='/camp/svc/reference/Genomics/iGenomes/Saccharomyces_cerevisiae/UCSC/sacCer3/Sequence/WholeGenomeFasta/genome.fa.fai'
 
 // get the input FastQ files into a <SAMPLE><LIBRARY><LANE><FASTQ> format
 Channel
