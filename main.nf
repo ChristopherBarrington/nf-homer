@@ -43,7 +43,6 @@ Channel
 // if the --split parameter is used, split the FastQ files into bitesize chunks before continuing
 process split_input_files_into_chunks {
 
-	label 'standard'
 	tag {[sample, library, lane, read_pair].join('-')}
 
 	input:
@@ -54,7 +53,7 @@ process split_input_files_into_chunks {
 
 	script:
 		if(params.raw_data.get('split_input_files', false)) {
-			n_records = params.raw_data.get('split_input_files').toString().isInteger() ? params.raw_data.get('split_input_files') : 500000
+			n_records = params.raw_data.get('split_input_files').toString().isInteger() ? params.raw_data.get('split_input_files') : 5000000
 			n_lines = n_records * 4
 			"""
 			gunzip --to-stdout ${fastq} | split --lines $n_lines --suffix-length 5 --additional-suffix .fastq - ''
@@ -75,10 +74,8 @@ OUTPUT__split_input_files_into_chunks
 // read each input FastQ file and remove the restriction site (if present)
 process trim_restriction_sites_from_fastq {
 
-	label 'standard'
+	label 'need_homer'
 	tag {[sample, library, lane, read_pair, chunk].join('-')}
-
-	module 'Homer/4.10-Perl-5.26.1-foss-2018a'
 
 	input:
 		set val(sample), val(library), val(lane), val(read_pair), val(chunk), file(fastq) from INPUT__trim_restriction_sites_from_fastq
@@ -87,7 +84,6 @@ process trim_restriction_sites_from_fastq {
 		set val(sample), val(library), val(lane), val(read_pair), val(chunk), file('*.fastq.trimmed') into OUTPUT__trim_restriction_sites_from_fastq__TRIMMED_FASTQ
 
 	script:
-
 		"""
 		homerTools trim -3 GATC -mis 0 -matchStart 20 -min 20 $fastq
 		"""
@@ -107,9 +103,8 @@ OUTPUT__trim_restriction_sites_from_fastq__TRIMMED_FASTQ
 
 process align_trimmed_fastq {
 
-	label 'standard'
 	tag {[sample, library, lane, read_pair].join('-')}
-	publishDir mode: 'copy', overwrite: true, path: "output/bowtie2/logs", pattern: '*log'
+	publishDir mode: 'copy', overwrite: true, path: 'output/bowtie2/logs', pattern: '*log'
 
 	input:
 		set val(sample), val(library), val(lane), val(read_pair), val(chunk), file(fastq) from INPUT__align_trimmed_fastq
@@ -132,50 +127,6 @@ OUTPUT__align_trimmed_fastq__ALIGNED_SAM
 	.dump(tag: 'OUTPUT__align_trimmed_fastq__ALIGNED_SAM')
 	.into{INPUT__convert_sam_chunks_to_bam;
 	      INPUT__make_tag_directory}
-
-// convert the mapped sam chunks into bam
-////process convert_sam_chunks_to_bam {
-////	
-////	module 'SAMtools/1.9-foss-2018b'
-////
-////	input:
-////		set val(sample), val(library), val(lane), val(read_pair), val(chunk), file(sam) from INPUT__convert_sam_chunks_to_bam
-////
-////	output:
-////		set val(sample), val(library), val(lane), val(read_pair), val(chunk), file('*.bam') into OUTPUT__convert_sam_chunks_to_bam__BAM
-////
-////	script:
-////		output_file = sam.toString().replaceAll('.sam$', '.bam')
-////		"""
-////		samtools view --output-fmt=BAM -o $output_file $sam
-////		"""
-////}
-////
-////OUTPUT__convert_sam_chunks_to_bam__BAM
-////	.dump(tag: 'OUTPUT__convert_sam_chunks_to_bam__BAM')
-////	.set{INPUT__merge_map_chunks}
-
-// combine the mapped fragments from lane chunks
-////process merge_map_chunks {
-////
-////	module 'SAMtools/1.9-foss-2018b'
-////
-////	input:
-////		set val(sample), val(library), val(lane), val(read_pair), val(chunk), file(sams) from INPUT__merge_map_chunks.groupTuple(by: [0,1,2,4]).dump(tag: 'INPUT__merge_map_chunks')
-////
-////	output:
-////		set val(sample), val(library), val(lane), val(read_pair), val(chunk), file(output_file) into OUTPUT__merge_map_chunks_BAM
-////
-////	script:
-////		output_file = read_pair + '.sam'
-////		"""
-////		SAMS=`echo $sams | tr ' ' '\n' | sort`
-////		samtools cat \${SAMS[@]} | samtools view -h -o $output_file -
-////		"""
-////}
-////
-////OUTPUT__merge_map_chunks_BAM
-////	.dump(tag: 'OUTPUT__merge_map_chunks_BAM')
 
 
 /******************************************************
@@ -326,6 +277,9 @@ process make_juicebox_file_from_maps {
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: 'output/Juicebox'
 
+	when:
+		false
+
 	input:
 		set val(dataset_name), file(tag_directory_path) from INPUT__make_juicebox_file_from_maps
 
@@ -360,7 +314,6 @@ OUTPUT__make_tag_directory_for_lanes__QC
 
 process plot_tag_qc_petagLocalDistribution {
 
-	label 'standard'
 	label 'need_r'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: 'output/qc/petagLocalDistribution'
@@ -378,7 +331,6 @@ process plot_tag_qc_petagLocalDistribution {
 
 process plot_tag_qc_petagFreqDistribution {
 
-	label 'standard'
 	label 'need_r'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: 'output/qc/petagFreqDistribution'
@@ -396,7 +348,6 @@ process plot_tag_qc_petagFreqDistribution {
 
 process plot_tag_qc_petagRestrictionDistribution {
 
-	label 'standard'
 	label 'need_r'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: 'output/qc/petagRestrictionDistribution'
@@ -433,34 +384,39 @@ OUTPUT__merge_lane_tags_into_libraries__ANALYZE_HIC
 // make an interaction matrix from the tag directory
 process analyze_hic_create_matrix {
 
-	label 'standard'
+	label 'many_cores'
+	label 'high_memory'
 	label 'need_homer'
 	tag {dataset_name}
-	publishDir mode: 'copy', overwrite: true, path: "output/interaction_matrices/$normalisation_method/$resolution"
+	publishDir mode: 'copy', overwrite: true, path: "output/interaction_matrices/$normalisation_method/$balancing_option/$resolution"
 
 	resolutions = [2000, 10000, 50000, 100000] // get from params
-	normalisation_methods = ['coverageNorm','distNorm']
+	normalisation_methods = ['coverageNorm', 'distNorm']
+	balancing_options = ['balanced', 'unbalanced']
 
 	input:
 		set val(dataset_name), file(tag_directory_path) from INPUT__analyze_hic_create_matrix
 		each resolution from resolutions
 		each normalisation_method from normalisation_methods
+		each balancing_option from balancing_options
 
 	output:
-		set val(dataset_name), val(normalisation_method), val(resolution), val(window), file(output_file) into OUTPUT__analyze_hic_create_matrix
+		set val(dataset_name), val(normalisation_method), val(balance_arg), val(resolution), val(window), file(output_file) into OUTPUT__analyze_hic_create_matrix
 
 	script:
 		window = resolution
 		output_file = [dataset_name, 'homer'].join('.')
+		balance_arg = balancing_option == 'balanced' ? '-balance' : ''
 		"""
-		analyzeHiC $tag_directory_path -cpu ${task.cpus} -res $resolution -window $window -$normalisation_method -balance -o $output_file
+		analyzeHiC $tag_directory_path -cpu ${task.cpus} -res $resolution -window $window -$normalisation_method $balance_arg -o $output_file
 		"""
 }
 
 // calculate distal-to-local (DLR) and interchromosomal fraction (ICF)
 process analyze_hic_chromatin_compaction {
 
-	label 'standard'
+	label 'many_cores'
+	label 'high_memory'
 	label 'need_homer'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: "output/chromatin_compaction/$normalisation_method/res_$resolution/win_$window", pattern: '*bedGraph'
@@ -497,7 +453,8 @@ process analyze_hic_chromatin_compaction {
 
 process analyze_hic_find_tads_and_loops {
 
-	label 'standard'
+	label 'many_cores'
+	label 'high_memory'
 	label 'need_homer'
 	tag {dataset_name}
 	publishDir mode: 'copy', overwrite: true, path: "output/loops_and_tads/res_$resolution/win_$window", pattern: '*{bedGraph,txt,bed}'
